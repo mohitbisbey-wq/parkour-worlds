@@ -1,0 +1,187 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+    done,
+    bests,
+    loadSave,
+    saveDone,
+    recTime,
+    fmt,
+    wUnlk,
+    lUnlk,
+} from './save.js';
+
+function resetState() {
+    localStorage.clear();
+    for (let i = 0; i < done.length; i++) done[i] = false;
+    for (let i = 0; i < bests.length; i++) bests[i].length = 0;
+}
+
+beforeEach(resetState);
+
+describe('fmt', () => {
+    it('formats zero', () => {
+        expect(fmt(0)).toBe('0.00');
+    });
+
+    it('formats sub-second times with single-digit seconds', () => {
+        expect(fmt(50)).toBe('0.05');
+        expect(fmt(999)).toBe('0.99');
+    });
+
+    it('formats sub-minute times without minute prefix', () => {
+        expect(fmt(1000)).toBe('1.00');
+        expect(fmt(12345)).toBe('12.34');
+        expect(fmt(59990)).toBe('59.99');
+    });
+
+    it('pads seconds to two digits once minutes appear', () => {
+        expect(fmt(60000)).toBe('1:00.00');
+        expect(fmt(61500)).toBe('1:01.50');
+        expect(fmt(125000)).toBe('2:05.00');
+    });
+
+    it('always pads centiseconds to two digits', () => {
+        expect(fmt(1010)).toBe('1.01');
+        expect(fmt(60010)).toBe('1:00.01');
+    });
+});
+
+describe('recTime', () => {
+    it('records the first time and returns rank 0', () => {
+        expect(recTime(0, 10000)).toBe(0);
+        expect(bests[0]).toEqual([10000]);
+    });
+
+    it('keeps times sorted ascending', () => {
+        recTime(0, 30000);
+        recTime(0, 10000);
+        recTime(0, 20000);
+        expect(bests[0]).toEqual([10000, 20000, 30000]);
+    });
+
+    it('returns the rank of the inserted time', () => {
+        expect(recTime(0, 30000)).toBe(0);
+        expect(recTime(0, 10000)).toBe(0);
+        expect(recTime(0, 20000)).toBe(1);
+    });
+
+    it('caps at top 3 and evicts worst time', () => {
+        recTime(0, 30000);
+        recTime(0, 20000);
+        recTime(0, 10000);
+        const rank = recTime(0, 25000);
+        expect(bests[0]).toEqual([10000, 20000, 25000]);
+        expect(rank).toBe(2);
+    });
+
+    it('returns -1 when a time fails to make top 3', () => {
+        recTime(0, 10000);
+        recTime(0, 20000);
+        recTime(0, 30000);
+        expect(recTime(0, 40000)).toBe(-1);
+        expect(bests[0]).toEqual([10000, 20000, 30000]);
+    });
+
+    it('persists per-level bests to localStorage', () => {
+        recTime(3, 15000);
+        expect(JSON.parse(localStorage.getItem('ppb2_3'))).toEqual([15000]);
+    });
+
+    it('isolates bests across level indices', () => {
+        recTime(0, 5000);
+        recTime(1, 9000);
+        expect(bests[0]).toEqual([5000]);
+        expect(bests[1]).toEqual([9000]);
+    });
+});
+
+describe('wUnlk', () => {
+    it('always unlocks world 0', () => {
+        expect(wUnlk(0)).toBe(true);
+    });
+
+    it('always unlocks world 5 (practice)', () => {
+        expect(wUnlk(5)).toBe(true);
+    });
+
+    it('keeps world 1 locked until every level of world 0 is done', () => {
+        expect(wUnlk(1)).toBe(false);
+        done[0] = done[1] = done[2] = true;
+        expect(wUnlk(1)).toBe(false);
+        done[3] = true;
+        expect(wUnlk(1)).toBe(true);
+    });
+
+    it('only checks the previous world when unlocking world 2', () => {
+        done[4] = done[5] = done[6] = done[7] = true;
+        expect(wUnlk(2)).toBe(true);
+    });
+
+    it('does not unlock world 2 just because world 0 is done', () => {
+        done[0] = done[1] = done[2] = done[3] = true;
+        expect(wUnlk(2)).toBe(false);
+    });
+});
+
+describe('lUnlk', () => {
+    it('unlocks level 0 of any unlocked world', () => {
+        expect(lUnlk(0, 0)).toBe(true);
+        expect(lUnlk(5, 0)).toBe(true);
+    });
+
+    it('chains levels: level n requires level n-1 done', () => {
+        expect(lUnlk(0, 1)).toBe(false);
+        done[0] = true;
+        expect(lUnlk(0, 1)).toBe(true);
+        expect(lUnlk(0, 2)).toBe(false);
+        done[1] = true;
+        expect(lUnlk(0, 2)).toBe(true);
+    });
+
+    it('locks every level of a locked world', () => {
+        expect(lUnlk(1, 0)).toBe(false);
+        expect(lUnlk(1, 1)).toBe(false);
+        done[4] = true;
+        // World 1 still locked; level 1 should stay locked too.
+        expect(lUnlk(1, 1)).toBe(false);
+    });
+});
+
+describe('loadSave / saveDone round-trip', () => {
+    it('persists and restores done flags', () => {
+        done[0] = true;
+        done[5] = true;
+        done[19] = true;
+        saveDone();
+
+        for (let i = 0; i < done.length; i++) done[i] = false;
+        loadSave();
+
+        expect(done[0]).toBe(true);
+        expect(done[5]).toBe(true);
+        expect(done[19]).toBe(true);
+        expect(done[1]).toBe(false);
+    });
+
+    it('restores per-level bests written by recTime', () => {
+        recTime(7, 5000);
+        recTime(7, 7000);
+
+        for (let i = 0; i < bests.length; i++) bests[i].length = 0;
+        loadSave();
+
+        expect(bests[7]).toEqual([5000, 7000]);
+    });
+
+    it('survives corrupt JSON in localStorage without throwing', () => {
+        localStorage.setItem('ppd2', '{not valid json');
+        localStorage.setItem('ppb2_3', '{not valid json');
+        expect(() => loadSave()).not.toThrow();
+    });
+
+    it('treats missing keys as a fresh save', () => {
+        expect(() => loadSave()).not.toThrow();
+        expect(done.every(v => v === false)).toBe(true);
+        expect(bests.every(b => b.length === 0)).toBe(true);
+    });
+});
