@@ -6,7 +6,9 @@
     "dev": "node log.js dev & webpack-dev-server --config webpack/config.js --open",
     "build": "node log.js build & webpack --config webpack/config.prod.js",
     "dev-nolog": "webpack-dev-server --config webpack/config.js --open",
-    "build-nolog": "webpack --config webpack/config.prod.js"
+    "build-nolog": "webpack --config webpack/config.prod.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -32,7 +34,9 @@
     "webpack": "^5.99.6",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.1",
-    "webpack-merge": "^6.0.0"
+    "webpack-merge": "^6.0.0",
+    "vitest": "^2.1.9",
+    "jsdom": "^25.0.1"
   },
   "dependencies": {
     "phaser": "4.0.0"
