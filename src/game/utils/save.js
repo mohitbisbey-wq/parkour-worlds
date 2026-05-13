@@ -40,5 +40,5 @@ export function fmt(ms) {
     return `${m ? m + ':' : ''}${String(s).padStart(m ? 2 : 1, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
-export const wUnlk = wi => wi === 0 || wi === 5 || [0, 1, 2, 3].every(li => done[(wi - 1) * 4 + li]);
-export const lUnlk = (wi, li) => wUnlk(wi) && (li === 0 || done[wi * 4 + li - 1]);
+export const wUnlk = () => true;
+export const lUnlk = () => true;
