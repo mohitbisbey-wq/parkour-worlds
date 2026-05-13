@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash /Users/mohitb/game-generator/phaser3-project-template/.claude/statusline-command.sh"
+  }
+}

@@ -1,28 +1,62 @@
 import { Scene } from 'phaser';
 
-export class MainMenu extends Scene
-{
-    constructor ()
-    {
-        super('MainMenu');
-    }
+const W = 800, H = 450;
 
-    create ()
-    {
-        this.add.image(512, 384, 'background');
+export class MainMenu extends Scene {
+    constructor() { super('MainMenu'); }
 
-        this.add.image(512, 300, 'logo');
+    create() {
+        // Dark starfield background
+        this.add.rectangle(W / 2, H / 2, W, H, 0x06060f);
 
-        this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);
+        // Stars (deterministic pixel positions)
+        const stars = this.add.graphics();
+        stars.fillStyle(0xFFFFFF, 0.35);
+        for (let i = 0; i < 55; i++) {
+            stars.fillRect((i * 97 + 3) % W, (i * 61 + 5) % H, 1, 1);
+        }
 
-        this.input.once('pointerdown', () => {
+        // Larger accent stars
+        stars.fillStyle(0xFFFFFF, 0.7);
+        for (let i = 0; i < 12; i++) {
+            stars.fillRect((i * 173 + 15) % W, (i * 83 + 20) % H, 2, 2);
+        }
 
-            this.scene.start('Game');
+        // Title — PARKOUR
+        this.add.text(W / 2, H / 2 - 50, 'PARKOUR', {
+            fontFamily: 'monospace',
+            fontSize: 58,
+            color: '#FFD700',
+            fontStyle: 'bold',
+        }).setOrigin(0.5, 1);
 
-        });
+        // Title — WORLDS
+        this.add.text(W / 2, H / 2 + 12, 'WORLDS', {
+            fontFamily: 'monospace',
+            fontSize: 58,
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5, 1);
+
+        // Subtitle
+        this.add.text(W / 2, H / 2 + 40, '5 worlds  ·  20 levels  ·  beat the clock', {
+            fontFamily: 'monospace',
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.35)',
+        }).setOrigin(0.5, 0.5);
+
+        // Blinking start prompt
+        const prompt = this.add.text(W / 2, H / 2 + 80, 'PRESS SPACE OR CLICK TO START', {
+            fontFamily: 'monospace',
+            fontSize: 14,
+            color: '#FFD700',
+            fontStyle: 'bold',
+        }).setOrigin(0.5, 0.5);
+
+        this.tweens.add({ targets: prompt, alpha: 0, duration: 500, yoyo: true, repeat: -1, ease: 'Linear' });
+
+        // Input
+        this.input.keyboard.once('keydown-SPACE', () => this.scene.start('WorldSelect'));
+        this.input.once('pointerdown', () => this.scene.start('WorldSelect'));
     }
 }
