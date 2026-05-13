@@ -95,6 +95,7 @@ describe('recTime', () => {
     });
 });
 
+// Admin mode: all worlds and levels are always accessible.
 describe('wUnlk', () => {
     it('always unlocks world 0', () => {
         expect(wUnlk(0)).toBe(true);
@@ -104,46 +105,25 @@ describe('wUnlk', () => {
         expect(wUnlk(5)).toBe(true);
     });
 
-    it('keeps world 1 locked until every level of world 0 is done', () => {
-        expect(wUnlk(1)).toBe(false);
-        done[0] = done[1] = done[2] = true;
-        expect(wUnlk(1)).toBe(false);
-        done[3] = true;
-        expect(wUnlk(1)).toBe(true);
-    });
-
-    it('only checks the previous world when unlocking world 2', () => {
-        done[4] = done[5] = done[6] = done[7] = true;
-        expect(wUnlk(2)).toBe(true);
-    });
-
-    it('does not unlock world 2 just because world 0 is done', () => {
-        done[0] = done[1] = done[2] = done[3] = true;
-        expect(wUnlk(2)).toBe(false);
+    it('unlocks all worlds regardless of completion state', () => {
+        for (let wi = 0; wi <= 5; wi++) {
+            expect(wUnlk(wi)).toBe(true);
+        }
     });
 });
 
 describe('lUnlk', () => {
-    it('unlocks level 0 of any unlocked world', () => {
+    it('unlocks level 0 of any world', () => {
         expect(lUnlk(0, 0)).toBe(true);
         expect(lUnlk(5, 0)).toBe(true);
     });
 
-    it('chains levels: level n requires level n-1 done', () => {
-        expect(lUnlk(0, 1)).toBe(false);
-        done[0] = true;
-        expect(lUnlk(0, 1)).toBe(true);
-        expect(lUnlk(0, 2)).toBe(false);
-        done[1] = true;
-        expect(lUnlk(0, 2)).toBe(true);
-    });
-
-    it('locks every level of a locked world', () => {
-        expect(lUnlk(1, 0)).toBe(false);
-        expect(lUnlk(1, 1)).toBe(false);
-        done[4] = true;
-        // World 1 still locked; level 1 should stay locked too.
-        expect(lUnlk(1, 1)).toBe(false);
+    it('unlocks all levels of all worlds regardless of completion state', () => {
+        for (let wi = 0; wi <= 5; wi++) {
+            for (let li = 0; li < 4; li++) {
+                expect(lUnlk(wi, li)).toBe(true);
+            }
+        }
     });
 });
 
