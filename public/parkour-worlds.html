@@ -601,6 +601,8 @@
 <script>
 // Single shared AudioContext — created lazily inside a user gesture to avoid suspension
 let AC=null;
+let _muted=localStorage.getItem('ppmute')==='1';
+function toggleMute(){_muted=!_muted;localStorage.setItem('ppmute',_muted?'1':'0');MUS.mute(_muted);}
 function _getAC(){
   if(AC)return AC;
   try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
@@ -610,6 +612,7 @@ function _resumeAC(){const ac=_getAC();if(ac&&ac.state!=='running')ac.resume().t
 ['keydown','click','touchstart'].forEach(ev=>window.addEventListener(ev,_resumeAC));
 document.getElementById('ts').addEventListener('click',()=>{_resumeAC();if(phase==='menu'){phase='worldselect';MUS.play(-1);}});
 function sfx(type){
+  if(_muted)return;
   const ac=_getAC();if(!ac)return;
   if(ac.state!=='running'){ac.resume().catch(()=>{});return;}
   const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
@@ -1026,7 +1029,7 @@ const MUS=(()=>{
   function _ctx(){
     const ac=_getAC();if(!ac)return null;
     _resumeAC();
-    if(!_master){_master=ac.createGain();_master.gain.value=VOL;_master.connect(ac.destination);}
+    if(!_master){_master=ac.createGain();_master.gain.value=_muted?0:VOL;_master.connect(ac.destination);}
     return ac;
   }
   function _osc(ac,d,freq,t,dur,type,pk,att=0.008){
@@ -1122,7 +1125,8 @@ const MUS=(()=>{
   return{
     play(wi){if(_wi===wi)return;_stops.forEach(f=>f());_stops=[];_wi=wi;const ac=_ctx();if(!ac)return;const d=_master;_stops=wi===-1?_menu(ac,d):(tracks[wi]?tracks[wi](ac,d):[]);},
     restart(){if(_wi===-2)return;const wi=_wi;_stops.forEach(f=>f());_stops=[];const ac=_ctx();if(!ac)return;const d=_master;_stops=wi===-1?_menu(ac,d):(tracks[wi]?tracks[wi](ac,d):[]);},
-    stop(){_stops.forEach(f=>f());_stops=[];_wi=-2;}
+    stop(){_stops.forEach(f=>f());_stops=[];_wi=-2;},
+    mute(v){if(_master)_master.gain.value=v?0:VOL;}
   };
 })();
 
@@ -1999,6 +2003,12 @@ function loop(){
   else if(phase==='achievements')dAchievements();
   else{dBg();ctx.save();ctx.translate(0,-Math.round(camY));plats.forEach(dPlat);dConveyors();dMovPlats();coins.forEach(dCoin);dCP();dEnemies();dChest();dHealthPack();dGhost();dHazards();dPlayer();ctx.restore();dColossus();dHUD();if(phase==='complete')dComplete();}
   dToasts();
+  // Mute toggle button — always-on-top, bottom-left
+  {const mx=4,my=H-18,mw=28,mh=14;
+  ctx.fillStyle='rgba(0,0,0,.52)';ctx.beginPath();ctx.roundRect(mx,my,mw,mh,3);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(mx+.5,my+.5,mw-1,mh-1,3);ctx.stroke();
+  txt(_muted?'🔇':'🔊',mx+mw/2,my+mh/2+4,'rgba(255,255,255,.7)',8,'center',false);
+  if(hit(mx,my,mw,mh)){toggleMute();MC=false;}}
   MC=false;for(const k in JP)delete JP[k];
 }
 
