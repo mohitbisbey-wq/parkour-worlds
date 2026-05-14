@@ -644,11 +644,12 @@ function sfx(type){
 }
 // ── ACHIEVEMENTS ──────────────────────────────────────────────────────────
 const ACH=[
-  {id:'speed', n:'Speed Demon',    desc:'Finish a level in under 15s', icon:'⚡'},
-  {id:'all',   n:'Completionist',  desc:'Complete all 20 levels',      icon:'🏆'},
-  {id:'coins', n:'Coin Magnet',    desc:'Collect all coins in a level', icon:'💎'},
-  {id:'death', n:'Deathless Run',  desc:'Beat a level with 0 deaths',  icon:'🛡️'},
-  {id:'dash',  n:'Flash Step',     desc:'Dash 100 times total',        icon:'💨'},
+  {id:'speed',    n:'Speed Demon',    desc:'Finish a level in under 15s',   icon:'⚡'},
+  {id:'all',      n:'Completionist',  desc:'Complete all 20 levels',        icon:'🏆'},
+  {id:'coins',    n:'Coin Magnet',    desc:'Collect all coins in a level',  icon:'💎'},
+  {id:'death',    n:'Deathless Run',  desc:'Beat a level with 0 deaths',   icon:'🛡️'},
+  {id:'dash',     n:'Flash Step',     desc:'Dash 100 times total',         icon:'💨'},
+  {id:'survivor', n:'Survivor',       desc:'Beat the Gauntlet — all 5 zones in one run', icon:'💀'},
 ];
 let _ach=JSON.parse(localStorage.getItem('ppach')||'{}');
 let _dashes=parseInt(localStorage.getItem('ppdash')||'0',10);
@@ -727,14 +728,39 @@ const WD=[
 ]},
 {n:'Practice',e:'🎯',c:'#aaaaaa',bg:['#2a2a2a','#1a1a1a'],bot:'#111111',ls:[
  {n:'Test Zone',sp:{x:60,y:344},mw:2000,pl:[[0,370,2000,30]],co:[],cp:{x:900,y:370},go:{x:1800,y:370}}
+]},
+{n:'The Gauntlet',e:'💀',c:'#ff3333',bg:['#060004','#1a0000'],bot:'#0a0002',ls:[
+ {n:'Colossus Chase',sp:{x:50,y:390},mw:5760,
+  pl:[
+   [0,420,220,30],
+   [278,392,72,14],[416,360,68,14],[548,325,66,14],[682,290,66,14],[818,254,66,14],[956,220,68,14],[1094,184,72,14],
+   [1220,208,52,12],[1342,172,48,12],[1456,136,46,12],
+   [1502,26,14,116],[1586,26,14,116],[1516,26,84,12],
+   [1670,52,46,12],[1798,26,46,12],[1926,52,46,12],[2056,26,48,12],[2188,52,50,12],
+   [2306,26,42,12],[2452,52,40,12],[2602,26,40,12],[2752,52,40,12],[2904,26,40,12],[3060,52,40,12],[3218,26,42,12],
+   [3340,52,40,12],[3474,26,38,12],[3612,52,38,12],[3750,26,38,12],[3888,52,38,12],[4030,26,40,12],[4172,52,40,12],[4318,26,42,12],
+   [4452,52,36,12],[4590,26,36,12],[4734,52,36,12],[4880,26,36,12],[5030,52,36,12],[5184,26,36,12],[5340,52,36,12],[5490,26,38,12],
+   [5548,14,220,40],
+  ],
+  co:[
+   [310,370],[450,338],[582,303],[716,268],[852,232],[990,198],[1130,162],
+   [1254,186],[1376,150],[1488,114],
+   [1548,4],[1628,4],[1546,4],
+   [1762,30],[1888,4],[2018,30],[2148,4],
+   [2340,4],[2486,30],[2636,4],[2786,30],[2938,4],[3094,30],[3252,4],
+   [3374,30],[3508,4],[3646,30],[3784,4],[3922,30],[4064,4],[4206,30],[4352,4],
+   [4486,30],[4624,4],[4768,30],[4914,4],[5064,30],[5218,4],[5374,30],[5524,4],
+  ],
+  cp:{x:2310,y:30},
+  go:{x:5658,y:14}}
 ]}];
 
 // ── SAVES ─────────────────────────────────────────────────────────────
-let done=new Array(21).fill(false);
-let bests=Array.from({length:21},()=>[]);
+let done=new Array(25).fill(false);
+let bests=Array.from({length:25},()=>[]);
 async function load(){
   try{const r=await window.storage.get('ppd2');if(r)done=JSON.parse(r.value);}catch(e){}
-  for(let i=0;i<21;i++)try{const r=await window.storage.get(`ppb2_${i}`);if(r)bests[i]=JSON.parse(r.value);}catch(e){}
+  for(let i=0;i<25;i++)try{const r=await window.storage.get(`ppb2_${i}`);if(r)bests[i]=JSON.parse(r.value);}catch(e){}
 }
 const saveDone=()=>{try{window.storage.set('ppd2',JSON.stringify(done));}catch(e){}};
 const saveBest=i=>{try{window.storage.set(`ppb2_${i}`,JSON.stringify(bests[i]));}catch(e){}};
@@ -747,6 +773,7 @@ function recTime(li,ms){bests[li].push(ms);bests[li].sort((a,b)=>a-b);if(bests[l
 let phase='menu',selW=0,selL=0,plats=[],coins=[],cpObj={},camX=0,camY=0;
 let P={},deaths=0,t0=0,t1=0,runRank=-1,completedAt=0;
 let enemies=[],movPlats=[],hazards=[],hazardTimer=0,currentPush={timer:0,dir:0};
+let bossData=null; // {x, spd} — colossus state for boss level
 
 function mkP(sp){return{x:sp.x,y:sp.y,vx:0,vy:0,w:18,h:26,gnd:false,wall:0,coy:0,jbuf:0,cpx:sp.x,cpy:sp.y,nc:0,face:1,df:0,hearts:3,dc:0};}
 const MP4=[
@@ -762,12 +789,13 @@ function startLv(wi,li){
   coins=lv.co.map(c=>({x:c[0],y:c[1],got:false}));
   cpObj={x:lv.cp.x,y:lv.cp.y,hit:false};
   camX=0;camY=0;deaths=0;runRank=-1;t0=Date.now();t1=0;hazards=[];hazardTimer=0;currentPush={timer:0,dir:0};
-  movPlats=li===3?MP4[wi].map(m=>({x:m[0],y:m[1],w:m[2],h:m[3],x0:m[4],x1:m[5],spd:m[6],t:0})):[];
-  enemies=plats.length>=7?(lv.en||[2,4,6]).map(i=>{
+  movPlats=li===3&&wi<5?MP4[wi].map(m=>({x:m[0],y:m[1],w:m[2],h:m[3],x0:m[4],x1:m[5],spd:m[6],t:0})):[];
+  enemies=plats.length>=7&&wi<6?(lv.en||[2,4,6]).map(i=>{
     const pl=plats[i];
     const cx=pl.x+pl.w/2-7;
     return{x:cx,y:pl.y-14,minX:pl.x,maxX:pl.x+pl.w-10,dir:1,w:10,h:14};
   }):[];
+  bossData=wi===6?{x:-120,spd:0.65}:null;
   P=mkP(lv.sp);phase='play';MUS.play(wi<5?wi:5);
 }
 
@@ -839,6 +867,7 @@ function upd(){
     if(deaths===0)checkAch('death');
     if(selW<5&&p.nc>=coins.length&&coins.length>0)checkAch('coins');
     if(done.slice(0,20).every(Boolean))checkAch('all');
+    if(selW===6&&deaths===0)checkAch('survivor');
   }
   if(p.y>H+120)die();
   for(const e of enemies){
@@ -850,11 +879,21 @@ function upd(){
       else hurt();
     }
   }
+  // ── COLOSSUS (boss level) ─────────────────────────────────────────────
+  if(bossData&&phase==='play'){
+    bossData.spd=Math.min(1.4,0.65+bossData.x*0.00010);
+    bossData.x+=bossData.spd;
+    if(P.df===0&&bossData.x+80>P.x){die();bossData.x=-120;bossData.spd=0.65;}
+  }
   // ── HAZARDS ───────────────────────────────────────────────────────────
-  if(selW<5){
+  if(selW<5||selW===6){
     hazardTimer++;
-    const intervals=[300,240,360,270,300];
-    if(hazardTimer>300&&hazardTimer%intervals[selW]===0&&hazards.length<4)_spawnHazard();
+    if(selW<5){
+      const intervals=[300,240,360,270,300];
+      if(hazardTimer>300&&hazardTimer%intervals[selW]===0&&hazards.length<4)_spawnHazard();
+    }else{
+      if(hazardTimer>150&&hazardTimer%160===0&&hazards.length<6)_spawnHazard();
+    }
   }
   if(selW===3&&currentPush.timer>0){currentPush.timer--;P.vx+=currentPush.dir*0.14;}
   hazards=hazards.filter(h=>{
@@ -902,6 +941,14 @@ function _spawnHazard(){
     currentPush={timer:80,dir:hazardTimer%2===0?1:-1};
   }else if(selW===4){// Fire: lava geyser
     hazards.push({x:camX+100+Math.floor(Math.random()*(W-200)),y:H-28,r:14,type:4,life:0});
+  }else if(selW===6){// Gauntlet: hazard cycles by zone
+    const zone=Math.min(4,Math.floor(P.x/1100));
+    const h3=[80,200,320];
+    if(zone===0){hazards.push({x:camX+W+16,y:h3[Math.floor(Math.random()*3)],vx:-5.5,vy:0,r:10,type:0,life:0});}
+    else if(zone===1){const fr=hazardTimer%2===0;hazards.push({x:fr?camX+W+16:camX-16,y:h3[Math.floor(Math.random()*3)],vx:fr?-4.5:4.5,vy:0,r:8,type:1,life:0,rot:0});}
+    else if(zone===2){const fr=hazardTimer%2===0;hazards.push({x:fr?camX+W+20:camX-20,y:H-55,vx:fr?-3:3,vy:-2,r:12,type:2,life:0,rot:0});}
+    else if(zone===3){hazards.push({x:camX+50+Math.floor(Math.random()*(W-100)),y:H+10,vx:0,vy:-2,r:11,type:3,life:0});}
+    else{hazards.push({x:camX+60+Math.floor(Math.random()*(W-120)),y:H-28,r:14,type:4,life:0});if(hazards.length<7)hazards.push({x:camX+60+Math.floor(Math.random()*(W-120)),y:H-28,r:14,type:4,life:0});}
   }
 }
 
@@ -1108,6 +1155,19 @@ function dBg(){
     // Bioluminescent floor sparkles
     for(let i=0;i<10;i++){if(Math.sin(t*3+i*1.3)>.5){ctx.fillStyle='rgba(0,221,187,.12)';ctx.fillRect((i*83+12)%W,H-35+((i*11)%16),3,3);}}
 
+  }else if(selW===6){// The Gauntlet — hellish void with zone tints
+    const zone=Math.min(4,Math.floor((P.x+off*.15)/1100));
+    const zoneTints=['rgba(0,30,60,.2)','rgba(50,0,70,.2)','rgba(60,30,0,.2)','rgba(0,50,70,.2)','rgba(100,0,0,.2)'];
+    ctx.fillStyle=zoneTints[zone];ctx.fillRect(0,0,W,H);
+    // Zone name watermark
+    const zoneNames=['Pirate Seas','Ninja Dojo','Wild West','Deep Ocean','Fire & Brimstone'];
+    ctx.globalAlpha=0.06;ctx.fillStyle='#ffffff';ctx.font='bold 48px monospace';ctx.textAlign='center';
+    ctx.fillText(zoneNames[zone],W/2,H/2+16);ctx.globalAlpha=1;ctx.textAlign='left';
+    // Rising embers
+    for(let i=0;i<18;i++){const ex=Math.floor((i*73+t*42)%W),ey=Math.floor(H-40-((t*55+i*52)%(H-50)));ctx.fillStyle=`rgba(255,${40+i*10},0,${.06+(i%3)*.03})`;ctx.fillRect(ex,ey,3,3);}
+    // Crackling ground glow
+    ctx.fillStyle='rgba(180,0,0,.25)';ctx.fillRect(0,H-40,W,12);
+    for(let i=0;i<8;i++){ctx.fillStyle='rgba(255,60,0,.10)';ctx.fillRect(Math.floor((i*100+t*18)%W),H-36,60,8);}
   }else{// Fire & Brimstone
     // Far volcano silhouettes (5% parallax)
     [150,560].forEach((bx,i)=>{
@@ -1144,11 +1204,13 @@ const WC=[
   ['#082030','#00BB99','#007766','#04101A','#0C3040','#22DDBB'],// Ocean
   ['#140808','#FF3300','#AA1A00','#080404','#200C0C','#FF5500'],// Fire
   ['#2A2A2A','#666666','#444444','#1A1A1A','#333333','#888888'],// Practice
+  ['#1a0808','#cc2200','#881400','#0a0404','#220c0c','#ff3300'],// Gauntlet
 ];
 function dPlat(pl){
   const sx=pl.x-camX,sy=pl.y,sw=pl.w,sh=pl.h;
   if(sx+sw<-5||sx>W+5)return;
-  const[body,edgeHi,edgeSub,seam,tileInner,surf]=WC[selW]||WC[5];
+  const wcIdx=selW===6?Math.min(4,Math.floor((pl.x+pl.w/2)/1100)):selW;
+  const[body,edgeHi,edgeSub,seam,tileInner,surf]=WC[wcIdx]||WC[5];
   const x=sx,y=sy,w=sw,h=sh;
   // Body
   ctx.fillStyle=body;ctx.fillRect(x,y,w,h);
@@ -1363,6 +1425,51 @@ function dHazards(){
     ctx.restore();
   }
 }
+function dColossus(){
+  if(!bossData||phase!=='play')return;
+  const sx=bossData.x-camX;
+  // Red danger glow on left edge when close
+  const gap=P.x-(bossData.x+80);
+  if(gap<500){
+    const a=Math.max(0,Math.min(0.55,(500-gap)/500));
+    const gr=ctx.createLinearGradient(0,0,110,0);
+    gr.addColorStop(0,`rgba(255,0,0,${a})`);gr.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=gr;ctx.fillRect(0,0,110,H);
+    if(gap<200){ctx.fillStyle=`rgba(255,0,0,${(200-gap)/200*0.08*Math.sin(sec()*12+1)})`;ctx.fillRect(0,0,W,H);}
+  }
+  // Colossus body (screen-space, not world-space — no camY shift needed)
+  if(sx+80<-30||sx>W+60)return;
+  const gnd=H-28;
+  // Outer aura
+  ctx.fillStyle='rgba(120,0,0,.10)';ctx.fillRect(sx-55,gnd-168,110,174);
+  ctx.fillStyle='rgba(180,0,0,.07)';ctx.fillRect(sx-80,gnd-188,160,196);
+  // Body
+  ctx.fillStyle='#080008';ctx.fillRect(sx-32,gnd-130,64,130);
+  // Wide shoulders
+  ctx.fillStyle='#0c0010';ctx.fillRect(sx-48,gnd-104,96,28);
+  // Arms reaching right (toward player)
+  ctx.fillStyle='#080008';
+  ctx.fillRect(sx+32,gnd-90,32,14);ctx.fillRect(sx+62,gnd-88,14,10);
+  ctx.fillRect(sx-64,gnd-80,32,12);
+  // Claws
+  ctx.fillStyle='#1a0010';
+  for(let i=0;i<3;i++){ctx.fillRect(sx+74,gnd-94+i*7,10,5);ctx.fillRect(sx-76,gnd-84+i*7,10,4);}
+  // Head
+  ctx.fillStyle='#0a0012';ctx.fillRect(sx-26,gnd-162,52,34);
+  // Horns
+  ctx.fillStyle='#110018';
+  ctx.fillRect(sx-22,gnd-188,10,28);ctx.fillRect(sx+12,gnd-188,10,28);
+  ctx.fillRect(sx-24,gnd-196,6,10);ctx.fillRect(sx+18,gnd-196,6,10);
+  // Eyes — glowing red
+  ctx.fillStyle='#ff0000';ctx.fillRect(sx-18,gnd-152,14,9);ctx.fillRect(sx+4,gnd-152,14,9);
+  ctx.fillStyle='#ff7700';ctx.fillRect(sx-15,gnd-150,8,5);ctx.fillRect(sx+7,gnd-150,8,5);
+  // Eye inner light
+  ctx.fillStyle='#ffffff';ctx.fillRect(sx-13,gnd-150,3,3);ctx.fillRect(sx+9,gnd-150,3,3);
+  // Chest rune glow
+  const rp=0.5+0.5*Math.sin(sec()*4);
+  ctx.fillStyle=`rgba(255,0,0,${0.18+rp*0.14})`;ctx.fillRect(sx-8,gnd-80,16,16);
+  ctx.fillStyle=`rgba(255,100,0,${0.10+rp*0.08})`;ctx.fillRect(sx-5,gnd-77,10,10);
+}
 function dHUD(){
   const wd=WD[selW],acc=wd.c;
   ctx.fillStyle='rgba(4,4,14,.88)';ctx.fillRect(0,0,W,40);
@@ -1381,6 +1488,24 @@ function dHUD(){
   for(let i=0;i<3;i++)drawPixelHeart(W-94+i*14,10,i<P.hearts,'#ff4444');
   txt(`☠ ${deaths}`,W-9,17,'#ff6b6b',9,'right',false);
   txt('ESC = menu',W-9,31,'rgba(255,255,255,.25)',8,'right',false);
+  // Boss zone progress bar
+  if(bossData&&selW===6){
+    const zoneNames=['Pirate Seas','Ninja Dojo','Wild West','Deep Ocean','Fire & Brimstone'];
+    const zone=Math.min(4,Math.floor(P.x/1100));
+    const zoneProgress=Math.min(1,(P.x-zone*1100)/1100);
+    const lv=WD[selW].ls[selL];
+    const totalProgress=Math.min(1,P.x/lv.mw);
+    // Progress bar
+    ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(10,44,W-20,6);
+    ctx.fillStyle='#cc2200';ctx.fillRect(10,44,Math.floor((W-20)*totalProgress),6);
+    ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(10,44,Math.floor((W-20)*totalProgress),3);
+    // Zone name
+    const zcols=['#2196F3','#CE93D8','#FFCC80','#80DEEA','#FF7043'];
+    txt(zoneNames[zone]+' ('+(zone+1)+'/5)',W/2,56,zcols[zone],7,'center',false);
+    // Colossus proximity warning
+    const gap=P.x-(bossData.x+80);
+    if(gap<600)txt('⚠ COLOSSUS APPROACHING',W/2-28,34,'#ff3300',8,'center',true);
+  }
 }
 
 function starField(){ctx.fillStyle='rgba(255,255,255,.32)';for(let i=0;i<55;i++)ctx.fillRect((i*97+3)%W,(i*61+5)%H,1.2,1.2);}
@@ -1472,6 +1597,16 @@ function dWorldSelect(){
   ctx.beginPath();ctx.roundRect(pbx,pby,pbw,pbh,5);ctx.fill();ctx.stroke();
   txt(`${pw.e}  ${pw.ls[0].n}  — practice`,W/2,pby+19,'#aaaaaa',10,'center',false);
   if(hit(pbx,pby,pbw,pbh)){startLv(5,0);MC=false;}
+  // Boss level button
+  const bw2=WD[6],bbx=W/2+100,bby=H-44,bbw=200,bbh=28;
+  const bossBeaten=done[24];
+  ctx.fillStyle=bossBeaten?'rgba(255,51,51,.15)':'rgba(180,0,0,.12)';
+  ctx.strokeStyle=bossBeaten?'#ff6666':'#cc2200';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.roundRect(bbx,bby,bbw,bbh,5);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#cc2200';ctx.beginPath();ctx.roundRect(bbx,bby,bbw,3,{upperLeft:5,upperRight:5,lowerLeft:0,lowerRight:0});ctx.fill();
+  const bt=sec();
+  txt(`${bw2.e}  ${bw2.ls[0].n}${bossBeaten?' ★':''}`,W/2+200,bby+bbh/2,bossBeaten?'#ff6666':'rgba(255,80,80,.8)',10,'center',Math.floor(bt*2)%2===0&&!bossBeaten);
+  if(hit(bbx,bby,bbw,bbh)){startLv(6,0);MC=false;}
   // Achievement row
   const achY=H-28,achW=26,achGap=10,achX0=W/2-(ACH.length*(achW+achGap)-achGap)/2;
   ACH.forEach((a,i)=>{
@@ -1539,7 +1674,8 @@ function dComplete(){
   txt(`☠ ${deaths} death${deaths!==1?'s':''}`,W/2-65,my+260,'#ff6b6b',10,'center',false);
   txt(`${P.nc}/${coins.length} coins`,W/2+65,my+260,'rgba(200,210,230,.8)',10,'center',false);
   // Nav
-  if(selW===5)txt('Practice complete!',W/2,my+290,'#aaaaaa',12,'center',true);
+  if(selW===6)txt('THE GAUNTLET CONQUERED!',W/2,my+290,'#ff3333',13,'center',true);
+  else if(selW===5)txt('Practice complete!',W/2,my+290,'#aaaaaa',12,'center',true);
   else if(selW===4&&selL===3)txt('All 5 worlds conquered!',W/2,my+290,acc,12,'center',true);
   else if(selL<3&&Math.floor(sec()*2)%2===0)txt('SPACE → next level',W/2,my+290,acc,11,'center',true);
   else if(selL===3&&selW<4)txt(WD[selW+1].n+' unlocked!',W/2,my+290,'#CE93D8',11,'center',true);
@@ -1612,7 +1748,7 @@ function dAchievements(){
 function loop(){
   requestAnimationFrame(loop);
   if(isEsc()){
-    if(phase==='play'||phase==='complete'){phase='worldselect';MUS.play(-1);MC=false;}
+    if(phase==='play'||phase==='complete'){phase='worldselect';MUS.play(-1);MC=false;bossData=null;}
     else if(phase==='worldselect'||phase==='achievements'){phase='menu';MUS.play(-1);MC=false;}
   }
   if(JP['KeyA']&&phase==='worldselect'){phase='achievements';MC=false;}
@@ -1625,7 +1761,7 @@ function loop(){
   if(phase==='menu')dMenu();
   else if(phase==='worldselect')dWorldSelect();
   else if(phase==='achievements')dAchievements();
-  else{dBg();ctx.save();ctx.translate(0,-Math.round(camY));plats.forEach(dPlat);dMovPlats();coins.forEach(dCoin);dCP();dEnemies();dChest();dHazards();dPlayer();ctx.restore();dHUD();if(phase==='complete')dComplete();}
+  else{dBg();ctx.save();ctx.translate(0,-Math.round(camY));plats.forEach(dPlat);dMovPlats();coins.forEach(dCoin);dCP();dEnemies();dChest();dHazards();dPlayer();ctx.restore();dColossus();dHUD();if(phase==='complete')dComplete();}
   dToasts();
   MC=false;for(const k in JP)delete JP[k];
 }
