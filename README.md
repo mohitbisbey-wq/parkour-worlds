@@ -1,8 +1,28 @@
-# Parkour Worlds — v2
+# Parkour Worlds — v3
 
-A pixel-art platformer built with vanilla HTML5 Canvas (no game framework dependencies for the main game file). Race the clock across 5 themed worlds, beat your ghost, collect coins, and conquer the daily challenge.
+A pixel-art platformer built with vanilla HTML5 Canvas (no game framework dependencies for the main game file). Race the clock across 8 themed worlds, beat your ghost, collect coins, and conquer the daily challenge.
+
+**[github.com/mohitbisbey-wq/parkour-worlds](https://github.com/mohitbisbey-wq/parkour-worlds)**
 
 ![screenshot](screenshot.png)
+
+---
+
+## What's in v3
+
+| Feature | Details |
+|---|---|
+| **3 new worlds** | Frozen Peaks, Storm Spire, Crystal Realm — each with a unique mechanic |
+| **Ice friction** | Frozen Peaks ground has near-zero stopping friction (0.985 vs 0.72) — slides feel slippery |
+| **Wind zones** | Storm Spire levels have directional wind zones that push the player mid-air |
+| **Bounce pads** | Crystal Realm spring pads launch the player upward (vy −16) and reset dash |
+| **Combo multiplier** | Chain dashes, wall-jumps, stomps, and bounces to build a combo counter on the HUD |
+| **Cosmetic skins** | Earn per-world coat colors via achievements; equip from the achievements panel |
+| **Parallax backgrounds** | All worlds now scroll background layers at varying depths |
+| **3 new enemy sprites** | Yeti (Frozen Peaks) · Gargoyle (Storm Spire) · Crystal Golem (Crystal Realm) |
+| **3 new hazard types** | Snowball · Lightning bolt · Crystal shard — one per new world |
+| **World select 3×3** | Level select grid expanded from 2×3 to 3×3 to fit all 9 playable worlds |
+| **Daily challenge pool** | Expanded from 20 to 32 levels across all 8 main worlds |
 
 ---
 
@@ -24,16 +44,19 @@ A pixel-art platformer built with vanilla HTML5 Canvas (no game framework depend
 
 ## Worlds
 
-| # | World | Accent | Levels |
-|---|---|---|---|
-| 1 | ⚓ Pirate Seas | `#2196F3` | Harbor Docks · Ship Masts · Jungle Ruins · Kraken Depths |
-| 2 | 🥷 Ninja Dojo | `#CE93D8` | Rooftop Rush · Bamboo Climb · Pagoda Peak · Shadow Summit |
-| 3 | 🌵 Wild West | `#FFCC80` | Dusty Trail · Canyon Run · Gold Mine · Dead Man's Pass |
-| 4 | 🐚 Deep Ocean | `#80DEEA` | Coral Reef · Kelp Forest · The Abyss · Sunken Ship |
-| 5 | 🔥 Fire & Brimstone | `#FF7043` | Lava Fields · Magma Chamber · Ember Peak · The Core |
-| — | ⚙️ The Clockwork | `#c8900a` | Gear Up · Factory Floor · Conveyor Chaos · The Machine |
-| — | 🎯 Practice | `#aaaaaa` | Test Zone |
-| — | 💀 The Gauntlet | `#cc2200` | All 5 worlds in one brutal run |
+| # | World | Accent | Mechanic | Levels |
+|---|---|---|---|---|
+| 1 | ⚓ Pirate Seas | `#2196F3` | — | Harbor Docks · Ship Masts · Jungle Ruins · Kraken Depths |
+| 2 | 🥷 Ninja Dojo | `#CE93D8` | — | Rooftop Rush · Bamboo Climb · Pagoda Peak · Shadow Summit |
+| 3 | 🌵 Wild West | `#FFCC80` | — | Dusty Trail · Canyon Run · Gold Mine · Dead Man's Pass |
+| 4 | 🐚 Deep Ocean | `#80DEEA` | — | Coral Garden · Kelp Forest · The Abyss · The Trench |
+| 5 | 🔥 Fire & Brimstone | `#FF7043` | — | Ember Fields · Volcano Climb · The Inferno · The Core |
+| — | ⚙️ The Clockwork | `#FFD54F` | Conveyor belts | Gear Up · Factory Floor · Conveyor Chaos · The Machine |
+| — | ❄️ Frozen Peaks | `#80D8FF` | Ice friction | Glacier Run · Blizzard Pass · Ice Caverns · The Summit |
+| — | ⛈️ Storm Spire | `#90CAF9` | Wind zones | Windy Ledge · Gale Cliffs · Tempest Road · Eye of Storm |
+| — | 💎 Crystal Realm | `#E040FB` | Bounce pads | Crystal Entry · Gem Falls · Deep Prism · The Heart |
+| — | 🎯 Practice | `#aaaaaa` | — | Test Zone |
+| — | 💀 The Gauntlet | `#cc2200` | — | All 5 worlds in one brutal run |
 
 ---
 
@@ -75,7 +98,7 @@ The main game file is `public/parkour-worlds.html` — a single self-contained H
 
 ## Design system
 
-The v2 visual language is documented in `Parkour Worlds Design System-3.zip`:
+The v2 visual language is documented in `design/Parkour Worlds Design System-3.zip`:
 - `HANDOFF.md` — implementation guide
 - `BRAND_GUIDE.md` — color tokens, typography, spacing, motion rules
 - `colors_and_type.css` — all design tokens

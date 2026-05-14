@@ -1,26 +1,16 @@
 {
-  "name": "template-webpack",
-  "version": "3.3.0",
+  "name": "parkour-worlds",
+  "version": "2.0.0",
+  "description": "Parkour Worlds v2 — pixel-art platformer",
   "main": "src/main.js",
   "scripts": {
-    "dev": "node log.js dev & webpack-dev-server --config webpack/config.js --open",
-    "build": "node log.js build & webpack --config webpack/config.prod.js",
-    "dev-nolog": "webpack-dev-server --config webpack/config.js --open",
-    "build-nolog": "webpack --config webpack/config.prod.js",
+    "dev": "webpack-dev-server --config webpack/config.js --open",
+    "build": "webpack --config webpack/config.prod.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/phaserjs/template-webpack.git"
-  },
-  "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
+  "author": "Mohit Bisbey",
   "license": "MIT",
-  "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
-  "bugs": {
-    "url": "https://github.com/phaserjs/template-webpack/issues"
-  },
-  "homepage": "https://github.com/phaserjs/template-webpack#readme",
   "devDependencies": {
     "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.9",
