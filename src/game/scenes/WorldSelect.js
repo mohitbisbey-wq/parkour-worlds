@@ -2,6 +2,8 @@ import * as Phaser from 'phaser';
 import { Scene } from 'phaser';
 import { WD } from '../data/worlds';
 import { done, bests, wUnlk, lUnlk, fmt } from '../utils/save';
+import { playMusic } from '../utils/music';
+import { drawEmblem } from '../utils/emblems';
 
 const W = 800, H = 450;
 
@@ -9,6 +11,7 @@ export class WorldSelect extends Scene {
     constructor() { super('WorldSelect'); }
 
     create() {
+        playMusic(-1);
         // Dark background
         this.add.rectangle(W / 2, H / 2, W, H, 0x06060f);
 
@@ -44,6 +47,8 @@ export class WorldSelect extends Scene {
     _buildCards() {
         const cw = 136, ch = 316, gap = 13;
         const x0 = (W - (5 * cw + 4 * gap)) / 2;
+        // Single graphics layer for all emblems (drawn on top of cards)
+        const emblGfx = this.add.graphics();
 
         WD.slice(0, 5).forEach((wd, wi) => {
             const cx = x0 + wi * (cw + gap), cy = 50;
@@ -63,10 +68,10 @@ export class WorldSelect extends Scene {
                 card.fillRect(cx, cy, cw, 4);
             }
 
-            // Emoji (use text fallback)
-            this.add.text(cx + cw / 2, cy + 34, wd.e, {
-                fontFamily: 'monospace', fontSize: 26
-            }).setOrigin(0.5, 0.5);
+            // Pixel-art emblem (greyed out when locked)
+            if (!unlk) emblGfx.setAlpha(0.25);
+            drawEmblem(emblGfx, wi, cx + cw / 2, cy + 34, 28);
+            emblGfx.setAlpha(1);
 
             // World name
             this.add.text(cx + cw / 2, cy + 60, wd.n.toUpperCase(), {
@@ -136,8 +141,8 @@ export class WorldSelect extends Scene {
                     fontFamily: 'monospace', fontSize: 26
                 }).setOrigin(0.5, 0.5);
 
-                const prevName = WD[wi - 1] ? WD[wi - 1].n : '';
-                this.add.text(cx + cw / 2, cy + 210, `Clear ${prevName}`, {
+                const prevEmoji = WD[wi - 1] ? WD[wi - 1].e : '';
+                this.add.text(cx + cw / 2, cy + 210, `clear ${prevEmoji}`, {
                     fontFamily: 'monospace', fontSize: 8,
                     color: 'rgba(255,255,255,0.2)',
                     wordWrap: { width: cw - 8 }
