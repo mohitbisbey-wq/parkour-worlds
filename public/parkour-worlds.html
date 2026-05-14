@@ -806,6 +806,18 @@ const loadGhost=(li)=>{try{const d=localStorage.getItem(`ppg_${li}`);return d?JS
 // ── GHOST STATE ───────────────────────────────────────────────────────
 let ghostRec=[],ghostPlay=null,ghostTick=0;
 
+// ── DAILY CHALLENGE STATE ─────────────────────────────────────────────
+let dailyDay=0,dailyWi=0,dailyLi=0,dailyBest=null,inDaily=false;
+function initDaily(){
+  dailyDay=Math.floor(Date.now()/86400000);
+  // Hash the day number to pick one of 20 levels deterministically
+  let s=dailyDay^0xdeadbeef;s=(Math.imul(s^(s>>>16),0x45d9f3b)>>>0);s=(s^(s>>>16))%20;
+  dailyWi=Math.floor(s/4);dailyLi=s%4;
+  const st=localStorage.getItem(`ppdc_${dailyDay}`);
+  dailyBest=st?parseInt(st,10):null;
+}
+initDaily();
+
 const wUnlk=()=>true;
 const lUnlk=()=>true;
 function recTime(li,ms){if(!bests[li])bests[li]=[];bests[li].push(ms);bests[li].sort((a,b)=>a-b);if(bests[li].length>3)bests[li].pop();saveBest(li);return bests[li].indexOf(ms);}
@@ -916,6 +928,7 @@ function upd(){
   if(ov(p.x,p.y,p.w,p.h,g.x-20,g.y-28,40,28)){
     t1=Date.now();const li=selW*4+selL;runRank=recTime(li,t1-t0);
     if(runRank===0)saveGhost(li,ghostRec);
+    if(inDaily){const ms2=t1-t0;if(dailyBest===null||ms2<dailyBest){dailyBest=ms2;localStorage.setItem(`ppdc_${dailyDay}`,ms2);}}
     if(!done[li]){done[li]=true;saveDone();}phase='complete';completedAt=Date.now();sfx('complete');
     if((t1-t0)<15000)checkAch('speed');
     if(deaths===0)checkAch('death');
@@ -1786,21 +1799,32 @@ function dWorldSelect(){
   ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(4,368);ctx.lineTo(W-4,368);ctx.stroke();
   txt('WASD/Arrows move  ·  Space jump  ·  Shift dash  ·  Wall-jump: push + jump',W/2,376,'rgba(255,255,255,.20)',8,'center',false);
-  // Practice button (left, compact)
-  const pw=WD[5],pbx=5,pby=387,pbw=148,pbh=24;
+  // Daily Challenge button (leftmost)
+  {const dly=WD[dailyWi],dbx=5,dby=383,dbw=140,dbh=32;
+  const dlyDone=dailyBest!==null;
+  ctx.fillStyle=dlyDone?'rgba(255,215,0,.12)':'rgba(64,200,128,.10)';
+  ctx.strokeStyle=dlyDone?'#FFD700':'#40c880';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.roundRect(dbx,dby,dbw,dbh,5);ctx.fill();ctx.stroke();
+  ctx.fillStyle=dlyDone?'#FFD700':'#40c880';
+  ctx.beginPath();ctx.roundRect(dbx,dby,dbw,3,{upperLeft:5,upperRight:5,lowerLeft:0,lowerRight:0});ctx.fill();
+  txt('📅 Daily',dbx+dbw/2,dby+12,dlyDone?'#FFD700':'#a0ffc8',8,'center',true);
+  txt(dlyDone?'★ '+fmt(dailyBest):'play now',dbx+dbw/2,dby+24,dlyDone?'#FFD700':'rgba(160,255,200,.7)',8,'center',false);
+  if(hit(dbx,dby,dbw,dbh)){inDaily=true;startLv(dailyWi,dailyLi);MC=false;}}
+  // Practice button (compact)
+  const pw=WD[5],pbx=149,pby=387,pbw=100,pbh=24;
   ctx.fillStyle='rgba(255,255,255,.06)';ctx.strokeStyle='rgba(160,160,160,.55)';ctx.lineWidth=1;
   ctx.beginPath();ctx.roundRect(pbx,pby,pbw,pbh,4);ctx.fill();ctx.stroke();
-  txt(`${pw.e}  ${pw.ls[0].n}`,pbx+pbw/2,pby+14,'#aaaaaa',9,'center',false);
+  txt(`${pw.e}  Practice`,pbx+pbw/2,pby+14,'#aaaaaa',9,'center',false);
   if(hit(pbx,pby,pbw,pbh)){startLv(5,0);MC=false;}
   // The Clockwork button (center, prominent)
-  const cwWD=WD[7],cwx=157,cwy=383,cww=240,cwh=32;
+  const cwWD=WD[7],cwx=253,cwy=383,cww=188,cwh=32;
   ctx.fillStyle='rgba(200,140,20,.12)';ctx.strokeStyle='#c8900a';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.roundRect(cwx,cwy,cww,cwh,5);ctx.fill();ctx.stroke();
   ctx.fillStyle='#c8900a';ctx.beginPath();ctx.roundRect(cwx,cwy,cww,3,{upperLeft:5,upperRight:5,lowerLeft:0,lowerRight:0});ctx.fill();
-  txt(`${cwWD.e}  ${cwWD.n}  —  4 levels`,cwx+cww/2,cwy+cwh/2+1,'#FFD54F',9,'center',true);
+  txt(`${cwWD.e}  ${cwWD.n}`,cwx+cww/2,cwy+cwh/2+1,'#FFD54F',9,'center',true);
   if(hit(cwx,cwy,cww,cwh)){startLv(7,0);MC=false;}
   // Boss level button (right, large)
-  const bw2=WD[6],bbx=401,bby=387,bbw=394,bbh=24;
+  const bw2=WD[6],bbx=445,bby=387,bbw=350,bbh=24;
   const bossBeaten=done[24];
   const bt=sec();
   ctx.fillStyle=bossBeaten?'rgba(255,51,51,.15)':'rgba(130,0,0,.16)';
@@ -1875,14 +1899,25 @@ function dComplete(){
   txt(`☠ ${deaths} death${deaths!==1?'s':''}`,W/2-65,my+260,'#ff6b6b',10,'center',false);
   txt(`${P.nc}/${coins.length} coins`,W/2+65,my+260,'rgba(200,210,230,.8)',10,'center',false);
   // Nav
-  if(selW===6)txt('THE GAUNTLET CONQUERED!',W/2,my+290,'#ff3333',13,'center',true);
+  if(inDaily)txt(`📅 Daily #${dailyDay} complete!`,W/2,my+290,'#FFD700',11,'center',true);
+  else if(selW===6)txt('THE GAUNTLET CONQUERED!',W/2,my+290,'#ff3333',13,'center',true);
   else if(selW===5)txt('Practice complete!',W/2,my+290,'#aaaaaa',12,'center',true);
   else if(selW===4&&selL===3)txt('All 5 worlds conquered!',W/2,my+290,acc,12,'center',true);
   else if(selL<3&&Math.floor(sec()*2)%2===0)txt('SPACE → next level',W/2,my+290,acc,11,'center',true);
   else if(selL===3&&selW<4)txt(WD[selW+1].n+' unlocked!',W/2,my+290,'#CE93D8',11,'center',true);
   txt('ESC → world select',W/2,my+308,'rgba(255,255,255,.28)',9,'center',false);
   ctx.restore();
-  txt('ESC → world select',W/2,H/2+124,'rgba(255,255,255,.4)',11,'center',false);
+  if(inDaily){
+    const ms2=t1-t0;
+    const shareText=`📅 Daily Parkour #${dailyDay}: ${fmt(dailyBest!==null?dailyBest:ms2)} · ${WD[dailyWi].n} - ${WD[dailyWi].ls[dailyLi].n}`;
+    const sbx=W/2-85,sby=H/2+126,sbw=170,sbh=24;
+    ctx.fillStyle='rgba(10,8,20,.92)';ctx.beginPath();ctx.roundRect(sbx,sby,sbw,sbh,5);ctx.fill();
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(sbx+.75,sby+.75,sbw-1.5,sbh-1.5,5);ctx.stroke();
+    txt('📋  Copy Result',W/2,sby+sbh/2+4,'#FFD700',9,'center',false);
+    if(hit(sbx,sby,sbw,sbh)){try{navigator.clipboard.writeText(shareText);}catch(e){}}
+  }else{
+    txt('ESC → world select',W/2,H/2+124,'rgba(255,255,255,.4)',11,'center',false);
+  }
 }
 
 function dAchievements(){
@@ -1949,12 +1984,12 @@ function dAchievements(){
 function loop(){
   requestAnimationFrame(loop);
   if(isEsc()){
-    if(phase==='play'||phase==='complete'){phase='worldselect';MUS.play(-1);MC=false;bossData=null;}
+    if(phase==='play'||phase==='complete'){phase='worldselect';MUS.play(-1);MC=false;bossData=null;inDaily=false;}
     else if(phase==='worldselect'||phase==='achievements'){phase='menu';MUS.play(-1);MC=false;}
   }
   if(JP['KeyA']&&phase==='worldselect'){phase='achievements';MC=false;}
   if(phase==='menu'&&(isJ()||MC)){phase='worldselect';MUS.play(-1);MC=false;}
-  if(phase==='complete'&&isJ()&&selL<WD[selW].ls.length-1){startLv(selW,selL+1);MC=false;}
+  if(phase==='complete'&&isJ()&&selL<WD[selW].ls.length-1&&!inDaily){startLv(selW,selL+1);MC=false;}
   upd();
   const _ts=document.getElementById('ts');
   if(phase==='menu'){if(_ts)_ts.style.display='block';cv.style.display='none';}
