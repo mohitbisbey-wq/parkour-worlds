@@ -1,15 +1,18 @@
-export const done = new Array(21).fill(false);
-export const bests = Array.from({ length: 21 }, () => []);
+// 11 worlds × 4 levels = 44 save slots (worlds 0-10, indices 0-43)
+export const SAVE_SLOTS = 44;
+
+export const done = new Array(SAVE_SLOTS).fill(false);
+export const bests = Array.from({ length: SAVE_SLOTS }, () => []);
 
 export function loadSave() {
     try {
         const d = localStorage.getItem('ppd2');
         if (d) {
             const parsed = JSON.parse(d);
-            parsed.forEach((v, i) => { done[i] = v; });
+            parsed.forEach((v, i) => { if (i < SAVE_SLOTS) done[i] = v; });
         }
     } catch (e) {}
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < SAVE_SLOTS; i++) {
         try {
             const b = localStorage.getItem(`ppb2_${i}`);
             if (b) bests[i] = JSON.parse(b);

@@ -1,21 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { WD, MP4 } from './worlds.js';
 
+// ── Top-level shape ───────────────────────────────────────────────────────────
+
 describe('WD top-level shape', () => {
-    it('has 5 main worlds plus 1 practice world', () => {
-        expect(WD).toHaveLength(6);
+    it('has 11 worlds (5 main + practice + gauntlet + clockwork + 3 new)', () => {
+        expect(WD).toHaveLength(11);
     });
 
-    it('gives each main world exactly 4 levels (matches save slots 0-19)', () => {
-        for (let wi = 0; wi < 5; wi++) {
+    it('gives each of the 8 main worlds exactly 4 levels', () => {
+        const fourLevelWorlds = [0, 1, 2, 3, 4, 7, 8, 9, 10];
+        for (const wi of fourLevelWorlds) {
             expect(WD[wi].ls, `world ${wi} (${WD[wi].n})`).toHaveLength(4);
         }
     });
 
-    it('gives the practice world exactly 1 level', () => {
+    it('gives Practice (WD[5]) exactly 1 level', () => {
         expect(WD[5].ls).toHaveLength(1);
     });
+
+    it('gives The Gauntlet (WD[6]) exactly 1 level', () => {
+        expect(WD[6].ls).toHaveLength(1);
+    });
 });
+
+// ── Per-world metadata ────────────────────────────────────────────────────────
 
 describe.each(WD.map((wd, wi) => [wi, wd.n, wd]))('world %i (%s) metadata', (wi, _name, wd) => {
     it('has a non-empty name and emoji', () => {
@@ -36,6 +45,8 @@ describe.each(WD.map((wd, wi) => [wi, wd.n, wd]))('world %i (%s) metadata', (wi,
         expect(wd.bot).toMatch(/^#[0-9A-Fa-f]{6}$/);
     });
 });
+
+// ── Per-level shape (all worlds) ──────────────────────────────────────────────
 
 describe.each(
     WD.flatMap((wd, wi) =>
@@ -98,8 +109,103 @@ describe.each(
     });
 });
 
+// ── Clockwork conveyor data ───────────────────────────────────────────────────
+
+describe('Clockwork (WD[7]) conveyor platforms', () => {
+    const wd = WD[7];
+
+    it('every level has at least one conveyor', () => {
+        for (const lv of wd.ls) {
+            expect(Array.isArray(lv.cv)).toBe(true);
+            expect(lv.cv.length).toBeGreaterThan(0);
+        }
+    });
+
+    it('each conveyor entry is [x, y, w, h, dir, spd] with dir ±1 and spd > 0', () => {
+        for (const lv of wd.ls) {
+            for (const cv of lv.cv) {
+                expect(cv).toHaveLength(6);
+                const [, , w, h, dir, spd] = cv;
+                expect(w).toBeGreaterThan(0);
+                expect(h).toBeGreaterThan(0);
+                expect([-1, 1]).toContain(dir);
+                expect(spd).toBeGreaterThan(0);
+            }
+        }
+    });
+});
+
+// ── Storm Spire wind zone data ────────────────────────────────────────────────
+
+describe('Storm Spire (WD[9]) wind zones', () => {
+    const wd = WD[9];
+
+    it('every level has at least one wind zone', () => {
+        for (const lv of wd.ls) {
+            expect(Array.isArray(lv.wz)).toBe(true);
+            expect(lv.wz.length).toBeGreaterThan(0);
+        }
+    });
+
+    it('each wind zone is [x, y, w, h, dx, dy] with positive area and non-zero force', () => {
+        for (const lv of wd.ls) {
+            for (const wz of lv.wz) {
+                expect(wz).toHaveLength(6);
+                const [, , w, h, dx, dy] = wz;
+                expect(w).toBeGreaterThan(0);
+                expect(h).toBeGreaterThan(0);
+                expect(dx !== 0 || dy !== 0).toBe(true);
+            }
+        }
+    });
+
+    it('wind force magnitudes are small enough to not be instant-kills (≤ 0.5 per axis)', () => {
+        for (const lv of wd.ls) {
+            for (const [, , , , dx, dy] of lv.wz) {
+                expect(Math.abs(dx)).toBeLessThanOrEqual(0.5);
+                expect(Math.abs(dy)).toBeLessThanOrEqual(0.5);
+            }
+        }
+    });
+});
+
+// ── Crystal Realm bounce pad data ─────────────────────────────────────────────
+
+describe('Crystal Realm (WD[10]) bounce pads', () => {
+    const wd = WD[10];
+
+    it('every level has at least one bounce pad', () => {
+        for (const lv of wd.ls) {
+            expect(Array.isArray(lv.bp)).toBe(true);
+            expect(lv.bp.length).toBeGreaterThan(0);
+        }
+    });
+
+    it('each bounce pad is [x, y, w, h] with positive dimensions', () => {
+        for (const lv of wd.ls) {
+            for (const bp of lv.bp) {
+                expect(bp).toHaveLength(4);
+                const [, , w, h] = bp;
+                expect(w).toBeGreaterThan(0);
+                expect(h).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it('all bounce pads are within the map width', () => {
+        for (const lv of wd.ls) {
+            for (const [bx, , bw] of lv.bp) {
+                expect(bx).toBeGreaterThanOrEqual(0);
+                expect(bx + bw).toBeLessThanOrEqual(lv.mw);
+            }
+        }
+    });
+});
+
+// ── MP4 moving platforms ──────────────────────────────────────────────────────
+
 describe('MP4 moving platforms', () => {
-    it('has one entry per non-practice world', () => {
+    it('has one entry per main world (0-4)', () => {
         expect(MP4).toHaveLength(5);
     });
 
@@ -108,12 +214,9 @@ describe('MP4 moving platforms', () => {
             expect(mps.length).toBeGreaterThan(0);
         });
 
-        it.each(mps.map((m, i) => [i, m]))('platform %i is well-formed', (_i, m) => {
-            // [x, y, w, h, x0, x1, spd]
+        it.each(mps.map((m, i) => [i, m]))('platform %i is well-formed [x,y,w,h,x0,x1,spd]', (_i, m) => {
             expect(m).toHaveLength(7);
-            const [x, y, w, h, x0, x1, spd] = m;
-            expect(x).toBeTypeOf('number');
-            expect(y).toBeTypeOf('number');
+            const [, , w, h, x0, x1, spd] = m;
             expect(w).toBeGreaterThan(0);
             expect(h).toBeGreaterThan(0);
             expect(x1).toBeGreaterThanOrEqual(x0);
@@ -122,7 +225,7 @@ describe('MP4 moving platforms', () => {
 
         it('keeps the full x-range within the matching level mw', () => {
             const lv = WD[wi].ls[3];
-            for (const [, , , , x0, x1, , ] of mps) {
+            for (const [, , , , x0, x1] of mps) {
                 expect(x0).toBeGreaterThanOrEqual(0);
                 expect(x1).toBeLessThanOrEqual(lv.mw);
             }

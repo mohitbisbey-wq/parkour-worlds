@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
     done,
     bests,
+    SAVE_SLOTS,
     loadSave,
     saveDone,
     recTime,
@@ -18,12 +19,30 @@ function resetState() {
 
 beforeEach(resetState);
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+describe('SAVE_SLOTS', () => {
+    it('is 44 (11 worlds × 4 levels)', () => {
+        expect(SAVE_SLOTS).toBe(44);
+    });
+
+    it('done array matches SAVE_SLOTS', () => {
+        expect(done).toHaveLength(SAVE_SLOTS);
+    });
+
+    it('bests array matches SAVE_SLOTS', () => {
+        expect(bests).toHaveLength(SAVE_SLOTS);
+    });
+});
+
+// ── fmt ───────────────────────────────────────────────────────────────────────
+
 describe('fmt', () => {
     it('formats zero', () => {
         expect(fmt(0)).toBe('0.00');
     });
 
-    it('formats sub-second times with single-digit seconds', () => {
+    it('formats sub-second times', () => {
         expect(fmt(50)).toBe('0.05');
         expect(fmt(999)).toBe('0.99');
     });
@@ -45,6 +64,8 @@ describe('fmt', () => {
         expect(fmt(60010)).toBe('1:00.01');
     });
 });
+
+// ── recTime ───────────────────────────────────────────────────────────────────
 
 describe('recTime', () => {
     it('records the first time and returns rank 0', () => {
@@ -93,53 +114,53 @@ describe('recTime', () => {
         expect(bests[0]).toEqual([5000]);
         expect(bests[1]).toEqual([9000]);
     });
+
+    it('works correctly for new-world level slots (indices 32-43)', () => {
+        expect(recTime(32, 12000)).toBe(0); // WD[8] level 0 — Frozen Peaks
+        expect(recTime(36, 15000)).toBe(0); // WD[9] level 0 — Storm Spire
+        expect(recTime(40, 18000)).toBe(0); // WD[10] level 0 — Crystal Realm
+        expect(recTime(43, 22000)).toBe(0); // WD[10] level 3 — The Heart
+        expect(bests[43]).toEqual([22000]);
+    });
 });
 
-// Admin mode: all worlds and levels are always accessible.
+// ── wUnlk / lUnlk ────────────────────────────────────────────────────────────
+
 describe('wUnlk', () => {
-    it('always unlocks world 0', () => {
-        expect(wUnlk(0)).toBe(true);
-    });
-
-    it('always unlocks world 5 (practice)', () => {
-        expect(wUnlk(5)).toBe(true);
-    });
-
-    it('unlocks all worlds regardless of completion state', () => {
-        for (let wi = 0; wi <= 5; wi++) {
-            expect(wUnlk(wi)).toBe(true);
+    it('unlocks all worlds 0-10', () => {
+        for (let wi = 0; wi <= 10; wi++) {
+            expect(wUnlk(wi), `world ${wi}`).toBe(true);
         }
     });
 });
 
 describe('lUnlk', () => {
-    it('unlocks level 0 of any world', () => {
-        expect(lUnlk(0, 0)).toBe(true);
-        expect(lUnlk(5, 0)).toBe(true);
-    });
-
-    it('unlocks all levels of all worlds regardless of completion state', () => {
-        for (let wi = 0; wi <= 5; wi++) {
+    it('unlocks all levels of all worlds 0-10', () => {
+        for (let wi = 0; wi <= 10; wi++) {
             for (let li = 0; li < 4; li++) {
-                expect(lUnlk(wi, li)).toBe(true);
+                expect(lUnlk(wi, li), `w${wi} l${li}`).toBe(true);
             }
         }
     });
 });
 
+// ── loadSave / saveDone round-trip ────────────────────────────────────────────
+
 describe('loadSave / saveDone round-trip', () => {
-    it('persists and restores done flags', () => {
+    it('persists and restores done flags across the full 44-slot range', () => {
         done[0] = true;
-        done[5] = true;
         done[19] = true;
+        done[32] = true; // Frozen Peaks slot
+        done[43] = true; // Crystal Realm last slot
         saveDone();
 
         for (let i = 0; i < done.length; i++) done[i] = false;
         loadSave();
 
         expect(done[0]).toBe(true);
-        expect(done[5]).toBe(true);
         expect(done[19]).toBe(true);
+        expect(done[32]).toBe(true);
+        expect(done[43]).toBe(true);
         expect(done[1]).toBe(false);
     });
 
@@ -153,6 +174,15 @@ describe('loadSave / saveDone round-trip', () => {
         expect(bests[7]).toEqual([5000, 7000]);
     });
 
+    it('restores bests for new-world slots', () => {
+        recTime(40, 9999); // Crystal Realm level 0
+
+        for (let i = 0; i < bests.length; i++) bests[i].length = 0;
+        loadSave();
+
+        expect(bests[40]).toEqual([9999]);
+    });
+
     it('survives corrupt JSON in localStorage without throwing', () => {
         localStorage.setItem('ppd2', '{not valid json');
         localStorage.setItem('ppb2_3', '{not valid json');
@@ -163,5 +193,12 @@ describe('loadSave / saveDone round-trip', () => {
         expect(() => loadSave()).not.toThrow();
         expect(done.every(v => v === false)).toBe(true);
         expect(bests.every(b => b.length === 0)).toBe(true);
+    });
+
+    it('does not overflow done array when save has more slots than expected', () => {
+        const oversized = new Array(60).fill(true);
+        localStorage.setItem('ppd2', JSON.stringify(oversized));
+        loadSave();
+        expect(done).toHaveLength(SAVE_SLOTS);
     });
 });
