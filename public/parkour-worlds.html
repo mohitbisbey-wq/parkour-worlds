@@ -335,6 +335,46 @@
     0%,100% { transform: translateY(-2px); }
     50%     { transform: translateY(2px); }
   }
+
+  /* ====== WORLD SHOWCASE STRIP ====== */
+  .world-strip {
+    position: absolute; left: 0; right: 0; top: 238px;
+    display: flex; justify-content: center; align-items: flex-start;
+    gap: 10px; pointer-events: none; z-index: 15;
+  }
+  .ws {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    animation: wsBob 2.8s ease-in-out infinite;
+  }
+  .ws-icon {
+    width: 34px; height: 34px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; border: 1px solid rgba(255,255,255,.1);
+  }
+  .ws-name {
+    font-family: 'Press Start 2P', monospace; font-size: 5px;
+    white-space: nowrap; letter-spacing: .04em; opacity: .75;
+  }
+  @keyframes wsBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  /* ====== EXTRA GROUND ENEMIES ====== */
+  .gnd-enemy {
+    position: absolute; bottom: 22px; width: 12px; height: 18px;
+    image-rendering: pixelated; z-index: 11;
+  }
+  .gnd-enemy div { position: absolute; }
+  .g-h2 { left:3px;  top:-5px; width:7px;  height:3px; }
+  .g-h1 { left:1px;  top:-2px; width:10px; height:4px; }
+  .g-bd { left:0;    top:6px;  width:12px; height:9px; }
+  .g-hd { left:2px;  top:2px;  width:8px;  height:5px; }
+  .g-ey { top:3px;   width:3px; height:2px; }
+  .g-ll { left:1px;  top:14px; width:4px;  height:4px; }
+  .g-lr { left:7px;  top:14px; width:4px;  height:4px; }
+  @keyframes enW1 { 0%,100%{transform:translateX(0)} 50%{transform:translateX(44px)} }
+  @keyframes enW2 { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-34px)} }
+  @keyframes enW3 { 0%,100%{transform:translateX(0)} 50%{transform:translateX(50px)} }
+  @keyframes enW4 { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-40px)} }
+  @keyframes enW5 { 0%,100%{transform:translateX(0)} 50%{transform:translateX(32px)} }
 </style>
 </head>
 <body>
@@ -552,7 +592,56 @@
     <div class="blink">&#9654; PRESS SPACE TO START</div>
   </div>
 
-  <!-- Ground + player + enemy -->
+  <!-- World showcase strip — fills middle empty area -->
+  <div class="world-strip">
+    <!-- 0 Grassy Highlands -->
+    <div class="ws" style="animation-delay:0s">
+      <div class="ws-icon" style="background:rgba(79,170,53,.18);border-color:rgba(79,170,53,.5);box-shadow:0 0 10px rgba(79,170,53,.35)">🌿</div>
+      <div class="ws-name" style="color:#6ec044">GRASSY</div>
+    </div>
+    <!-- 1 Wild West -->
+    <div class="ws" style="animation-delay:-.35s">
+      <div class="ws-icon" style="background:rgba(212,168,67,.18);border-color:rgba(212,168,67,.5);box-shadow:0 0 10px rgba(212,168,67,.35)">🤠</div>
+      <div class="ws-name" style="color:#d4a843">WEST</div>
+    </div>
+    <!-- 2 Deep Ocean -->
+    <div class="ws" style="animation-delay:-.7s">
+      <div class="ws-icon" style="background:rgba(0,176,255,.18);border-color:rgba(0,176,255,.5);box-shadow:0 0 10px rgba(0,176,255,.35)">🐚</div>
+      <div class="ws-name" style="color:#00b0ff">OCEAN</div>
+    </div>
+    <!-- 3 Ninja Dojo -->
+    <div class="ws" style="animation-delay:-1.05s">
+      <div class="ws-icon" style="background:rgba(224,82,82,.18);border-color:rgba(224,82,82,.5);box-shadow:0 0 10px rgba(224,82,82,.35)">🥷</div>
+      <div class="ws-name" style="color:#e05252">NINJA</div>
+    </div>
+    <!-- 4 Fire & Brimstone -->
+    <div class="ws" style="animation-delay:-1.4s">
+      <div class="ws-icon" style="background:rgba(255,90,0,.18);border-color:rgba(255,90,0,.5);box-shadow:0 0 10px rgba(255,90,0,.35)">🔥</div>
+      <div class="ws-name" style="color:#ff5a00">FIRE</div>
+    </div>
+    <!-- 7 Clockwork -->
+    <div class="ws" style="animation-delay:-1.75s">
+      <div class="ws-icon" style="background:rgba(153,102,204,.18);border-color:rgba(153,102,204,.5);box-shadow:0 0 10px rgba(153,102,204,.35)">⚙️</div>
+      <div class="ws-name" style="color:#9966cc">CLOCK</div>
+    </div>
+    <!-- 8 Frozen Peaks -->
+    <div class="ws" style="animation-delay:-2.1s">
+      <div class="ws-icon" style="background:rgba(128,216,255,.18);border-color:rgba(128,216,255,.5);box-shadow:0 0 10px rgba(128,216,255,.35)">❄️</div>
+      <div class="ws-name" style="color:#80d8ff">FROZEN</div>
+    </div>
+    <!-- 9 Storm Spire -->
+    <div class="ws" style="animation-delay:-2.45s">
+      <div class="ws-icon" style="background:rgba(144,202,249,.18);border-color:rgba(144,202,249,.5);box-shadow:0 0 10px rgba(144,202,249,.35)">⛈️</div>
+      <div class="ws-name" style="color:#90caf9">STORM</div>
+    </div>
+    <!-- 10 Crystal Realm -->
+    <div class="ws" style="animation-delay:-2.8s">
+      <div class="ws-icon" style="background:rgba(224,64,251,.18);border-color:rgba(224,64,251,.5);box-shadow:0 0 10px rgba(224,64,251,.35)">💎</div>
+      <div class="ws-name" style="color:#e040fb">XTAL</div>
+    </div>
+  </div>
+
+  <!-- Ground + player + enemies -->
   <div class="ground"></div>
   <div class="player">
     <div class="player-inner">
@@ -562,10 +651,67 @@
       <div class="p1"></div><div class="p2"></div>
     </div>
   </div>
+
+  <!-- Existing robot enemy (Wild West / default) -->
   <div class="enemy">
     <div class="e7"></div><div class="e6"></div>
     <div class="e3"></div><div class="e4"></div><div class="e5"></div>
     <div class="e1"></div><div class="e2"></div>
+  </div>
+
+  <!-- Yeti — Frozen Peaks (left side, slow lumbering) -->
+  <div class="gnd-enemy" style="left:72px; animation:enW1 5.2s ease-in-out infinite;">
+    <div class="g-h2" style="background:#aaccdd"></div>
+    <div class="g-h1" style="background:#c8e8f5"></div>
+    <div class="g-bd" style="background:#ddeeff"></div>
+    <div class="g-hd" style="background:#eef6ff"></div>
+    <div class="g-ey" style="left:2px; background:#80D8FF; box-shadow:0 0 4px #80D8FF"></div>
+    <div class="g-ll" style="background:#aaccdd"></div>
+    <div class="g-lr" style="background:#aaccdd"></div>
+  </div>
+
+  <!-- Gear Bot — Clockwork (left-center, brisk mechanical) -->
+  <div class="gnd-enemy" style="left:192px; animation:enW2 3.4s ease-in-out infinite;">
+    <div class="g-h2" style="background:#7a5520"></div>
+    <div class="g-h1" style="background:#b87333"></div>
+    <div class="g-bd" style="background:#b87333"></div>
+    <div class="g-hd" style="background:#cd9b6a"></div>
+    <div class="g-ey" style="left:2px; background:#ffd700; box-shadow:0 0 4px #ffd700"></div>
+    <div class="g-ll" style="background:#7a5520"></div>
+    <div class="g-lr" style="background:#7a5520"></div>
+  </div>
+
+  <!-- Fire Imp — Fire & Brimstone (right of center, faces left) -->
+  <div class="gnd-enemy" style="left:388px; animation:enW3 3.9s ease-in-out infinite;">
+    <div class="g-h2" style="background:#6a0000"></div>
+    <div class="g-h1" style="background:#8a0000"></div>
+    <div class="g-bd" style="background:#d84315"></div>
+    <div class="g-hd" style="background:#ff7043"></div>
+    <div class="g-ey" style="left:6px; background:#ffe000; box-shadow:0 0 4px #ffe000"></div>
+    <div class="g-ll" style="background:#b53800"></div>
+    <div class="g-lr" style="background:#b53800"></div>
+  </div>
+
+  <!-- Gargoyle — Storm Spire (right area, slow patrol) -->
+  <div class="gnd-enemy" style="right:218px; animation:enW4 5.6s ease-in-out infinite;">
+    <div class="g-h2" style="background:#2a2a3a"></div>
+    <div class="g-h1" style="background:#3a3a5a"></div>
+    <div class="g-bd" style="background:#5a5a7a"></div>
+    <div class="g-hd" style="background:#4a4a6a"></div>
+    <div class="g-ey" style="left:6px; background:#90caf9; box-shadow:0 0 5px #90caf9"></div>
+    <div class="g-ll" style="background:#3a3a5a"></div>
+    <div class="g-lr" style="background:#3a3a5a"></div>
+  </div>
+
+  <!-- Crystal Golem — Crystal Realm (far right, faces right) -->
+  <div class="gnd-enemy" style="right:128px; animation:enW5 4.3s ease-in-out infinite;">
+    <div class="g-h2" style="background:#4a1d7a"></div>
+    <div class="g-h1" style="background:#6a2d9a"></div>
+    <div class="g-bd" style="background:#7c3dac"></div>
+    <div class="g-hd" style="background:#9c4dcc"></div>
+    <div class="g-ey" style="left:2px; background:#e040fb; box-shadow:0 0 5px #e040fb"></div>
+    <div class="g-ll" style="background:#6a2d9a"></div>
+    <div class="g-lr" style="background:#6a2d9a"></div>
   </div>
 
   <script>
